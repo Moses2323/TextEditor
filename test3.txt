@@ -1,0 +1,12 @@
+#scalar Nneurs
+8
+#scalar Nastr
+8
+#scalar tBegin
+0
+#scalar tEnd
+110000
+#scalar dt
+0.1
+#scalar dtDump
+10000

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>spinner2.gif</file>
+    </qresource>
+</RCC>
