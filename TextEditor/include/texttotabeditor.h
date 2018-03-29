@@ -1,4 +1,4 @@
-/** @addtogroup NNTools
+/** @addtogroup TextToTabEditor
  * @{*/
 
 /** @file */
@@ -6,7 +6,7 @@
 #ifndef SIMPLEARTIFICIALSHELL200217_GASPARYANMOSES
 #define SIMPLEARTIFICIALSHELL200217_GASPARYANMOSES
 
-#include <toolssettings.h>
+#include <texttotabeditorsettings.h>
 
 #include <QWidget>
 
@@ -18,7 +18,6 @@ class QLabel;
 class QSplitter;
 namespace fttw{
     class OutSideWidget;
-}
 
 /*! \~russian \brief Виджет для открытия файла в специальном редакторе.
  *
@@ -43,7 +42,7 @@ namespace fttw{
  * \endcode
  *
  */
-class TOOLS_EXPORT SimpleArtificialShell : public QWidget{
+class TEXTTOTABEDITOR_EXPORT SimpleArtificialShell : public QWidget{
 	Q_OBJECT
 private:
 	//! \~russian \brief Главный виджет с текстовым редактором и его кнопками.
@@ -195,6 +194,8 @@ public slots:
 	void openFileForEditingWithLineEditor(const QString& str);
 
 };
+
+} // namespace fttw
 
 #endif // SIMPLEARTIFICIALSHELL200217_GASPARYANMOSES
 

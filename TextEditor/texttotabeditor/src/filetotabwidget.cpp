@@ -1,4 +1,5 @@
 #include <filetotabwidget.h>
+#include "LoaderWidget.h"
 #include "filetotab_priv.h"
 
 #include <QLineEdit>
@@ -18,19 +19,9 @@
 #include <limits>
 
 #include "printelement.h"
+#include "formistakes.h"
 
 namespace fttw{
-
-void print_mistake(const std::string& funcName, int line, const std::string& fileName, const std::string& message){
-	std::cerr<<"ERROR in "<<funcName<<" : line "<<line<<", file "<<fileName<<std::endl;
-	std::cerr<<"\t"<<message<<std::endl;
-	throw;
-}
-
-void print_mistakeLite(const std::string& funcName, int line, const std::string& fileName, const std::string& message) {
-	std::cerr<<"WARNING in "<<funcName<<" : line "<<line<<", file "<<fileName<<std::endl;
-	std::cerr<<"\t"<<message<<std::endl;
-}
 
 namespace {
 
@@ -244,6 +235,8 @@ void FileToTabWidget::layout_init(){
 }
 
 void FileToTabWidget::main_init(){
+	loaderWidget = new LoaderWidget;
+
 	setObjectName("ScrollArea");
 	mW_ = new QFrame;
 
@@ -834,7 +827,7 @@ void FileToTabWidget::chooseWhatCreate(){
 		mode_ = mode::TextEditor;
 	}
 
-	loaderWidget.remove();
+	loaderWidget->remove();
 }
 
 inline void FileToTabWidget::load_file(const std::string &filename){
@@ -843,7 +836,7 @@ inline void FileToTabWidget::load_file(const std::string &filename){
 	fttwFBthread_.reset( new FTTWFileBufferThread(filename, fttwSS_) );
 	connect(fttwFBthread_.get(), SIGNAL(finishedReading()), this, SLOT(chooseWhatCreate()));
 
-	loaderWidget.install(this);
+	loaderWidget->install(this);
 
 	fttwFBthread_->start();
 }
@@ -856,6 +849,7 @@ FileToTabWidget::FileToTabWidget(const std::string &filename, QWidget *pwg, mode
 FileToTabWidget::~FileToTabWidget() {
 	for(size_t i=0; i<printElements_.size(); ++i)
 		delete printElements_[i];
+	delete loaderWidget;
 }
 
 void FileToTabWidget::saveFromData(std::ostream& fout) const{

@@ -1,12 +1,12 @@
-/** @addtogroup NNTools
+/** @addtogroup TextToTabEditor
  * @{*/
 
 /** @file */
 
-#ifndef SBGLASS_H
-#define SBGLASS_H
+#ifndef LOADERWIDGET_OSIPOV_DMITRY
+#define LOADERWIDGET_OSIPOV_DMITRY
 
-#include <toolssettings.h>
+#include <texttotabeditorsettings.h>
 #include <QObject>
 
 class QColor;
@@ -23,7 +23,7 @@ struct LoaderWidgetPrivate;
  * Данный виджет устанавливается поверх другого любого виджета, используя метод install() и удаляется, используя метод remove().
  * Данный виджет обычно применяется, чтобы заблокировать какой-то другой виджет во время загрузки данных или внутренних расчетов.
  */
-class TOOLS_EXPORT LoaderWidget : public QObject{
+class TEXTTOTABEDITOR_EXPORT LoaderWidget : public QObject{
 	Q_OBJECT
 public:
 	/*! \~russian
@@ -109,6 +109,6 @@ private slots:
 
 };
 
-#endif // SBGLASS_H
+#endif // LOADERWIDGET_OSIPOV_DMITRY
 
 /*@}*/

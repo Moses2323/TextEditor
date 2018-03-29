@@ -1,4 +1,4 @@
-/** @addtogroup NNTools
+/** @addtogroup TextToTabEditor
  * @{*/
 
 /** @file */
@@ -6,8 +6,7 @@
 #ifndef FILETOTABWIDGET16012017GASPARYANMOSES_H
 #define FILETOTABWIDGET16012017GASPARYANMOSES_H
 
-#include <toolssettings.h>
-#include "LoaderWidget.h"
+#include <texttotabeditorsettings.h>
 
 #include <QScrollArea>
 #include <QFrame>
@@ -29,49 +28,13 @@ class QTableWidget;
 class QTextEdit;
 class QTabWidget;
 
+class LoaderWidget;
+
 namespace fttw{
 
 class FTTWFileBufferThread;
 class HighLightNumbers;
 class PrintElement;
-
-/*! \~russian
- * \brief Преобразует элемент на входе в строку.
- * \details У элемента должен быть определен оператор вывода,
- * т.к. преобразование происходит за счет простого вывода в строковый поток.
- * \param elem параметр, который будет преобразован в строку.
- * \return строку, состоящую из входного параметра.
- */
-template<typename T>
-inline std::string toStr(T elem) {
-	std::stringstream vss;
-	vss<<elem;
-	return vss.str();
-}
-
-/*! \~russian
- * \brief Печатает в поток ошибок сообщение об ошибке.
- * \details Печатает в поток ошибок сообщение об ошибке с указанием функции,
- * в которой произошла ошибка и номер строки,
- * на которой произошла ошибка и имя файла, а затем выходит из программы с помощью throw.
- * \param funcName имя функции, которое будет выведено (часто используется макрос __FUNCTION__ с дополнительным указанием аргументов).
- * \param line номер строки, на которой вызвана эта функция (зачастую достаточно использовать макрос __LINE__).
- * \param fileName имя файла, в котором находится функция, из которой произошел вызов функции-ошибки (зачастую достаточно использовать макрос __FILE__).
- * \param message сообщение об ошибке. Должно быть введено вручную.
- */
-extern void print_mistake(const std::string& funcName, int line, const std::string& fileName, const std::string& message);
-
-/*! \~russian
- * \brief Печатает в поток ошибок сообщение о предупреждении.
- * \details Печатает в поток ошибок сообщение о предупреждении с указанием функции,
- * в которой произошла ошибка и номер строки,
- * на которой произошла ошибка и имя файла. Не завершает работу программы.
- * \param funcName имя функции, которое будет выведено (часто используется макрос __FUNCTION__ с дополнительным указанием аргументов).
- * \param line номер строки, на которой вызвана эта функция (зачастую достаточно использовать макрос __LINE__).
- * \param fileName имя файла, в котором находится функция, из которой произошел вызов данной функции (зачастую достаточно использовать макрос __FILE__).
- * \param message сообщение-предупреждение. Должно быть введено вручную.
- */
-extern void print_mistakeLite(const std::string& funcName, int line, const std::string& fileName, const std::string& message);
 
 /*! \~russian \brief Класс, преобразующий файл в виджет и обратно.
  *
@@ -97,7 +60,7 @@ extern void print_mistakeLite(const std::string& funcName, int line, const std::
  * \endcode
  *
  */
-class TOOLS_EXPORT FileToTabWidget : public QScrollArea{
+class TEXTTOTABEDITOR_EXPORT FileToTabWidget : public QScrollArea{
 	Q_OBJECT
 private:
 	/*! \~russian
@@ -213,7 +176,7 @@ private:
 	//! \~russian \brief Менеджер размещения для виджета с прокруткой и параметрами. \details В данный менеджер размещения добавляются по одному QLabel и QLineEdit для каждого параметра в отдельности.
 	QGridLayout* widgetWithLabelsLayout_;
 	//! \~russian \brief Виджет, отображающий прокрутку (процесс загрузки). \details Используется, чтобы не блокировать работу приложения и показать пользователю, что приложение работает, а не зависло.
-	LoaderWidget loaderWidget;
+	LoaderWidget* loaderWidget;
 
 	//! \~russian \brief Тред, в который отдается загрузка файла в строковый буфер. \details Когда происходит загрузка, на место виджета блокнота ставится виджет прокрутки.
 	std::unique_ptr<FTTWFileBufferThread> fttwFBthread_;
@@ -532,7 +495,7 @@ inline std::ostream& operator<<(std::ostream& s, const FileToTabWidget& tw){
  * \endcode
  *
  */
-class TOOLS_EXPORT OutSideWidget : public QFrame{
+class TEXTTOTABEDITOR_EXPORT OutSideWidget : public QFrame{
 	Q_OBJECT
 private:
 	/*! \~russian

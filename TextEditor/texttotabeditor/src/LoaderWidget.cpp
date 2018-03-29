@@ -6,7 +6,7 @@
 #include <QString>
 #include <functional>
 
-#include <LoaderWidget.h>
+#include "LoaderWidget.h"
 
 namespace {
 	const QVector<QString> c_animFileNames {

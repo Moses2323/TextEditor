@@ -1,11 +1,11 @@
-#include "shell.h"
+#include "texttotabeditor.h"
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
 
-	SimpleArtificialShell sash;
+	fttw::SimpleArtificialShell sash;
 	sash.setGeometry(200,200,800,600);
 	sash.show();
 

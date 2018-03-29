@@ -1,4 +1,4 @@
-/** @addtogroup NNTools
+/** @addtogroup TextToTabEditor
  * @{*/
 
 /** @file */

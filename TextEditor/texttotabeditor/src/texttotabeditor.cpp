@@ -1,7 +1,8 @@
-#include <shell.h>
+#include <texttotabeditor.h>
 
 #include <filetotabwidget.h>
 #include "filetotab_priv.h"
+#include "formistakes.h"
 
 #include <QDebug>
 #include <QPushButton>
@@ -11,6 +12,8 @@
 #include <QLineEdit>
 
 #include <fstream>
+
+namespace fttw{
 
 SimpleArtificialShell::SimpleArtificialShell(QWidget *obj) : QWidget(obj){
     mL_ = new QVBoxLayout;
@@ -103,3 +106,5 @@ void SimpleArtificialShell::retranslate(){
 	if (fileToTab_ != nullptr)
 		fileToTab_->retranslate();
 }
+
+} // namespace fttw
