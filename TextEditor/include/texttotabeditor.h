@@ -42,7 +42,7 @@ namespace fttw{
  * \endcode
  *
  */
-class TEXTTOTABEDITOR_EXPORT SimpleArtificialShell : public QWidget{
+class TEXTTOTABEDITOR_EXPORT TextToTabEditorShell : public QWidget{
 	Q_OBJECT
 private:
 	//! \~russian \brief Главный виджет с текстовым редактором и его кнопками.
@@ -83,9 +83,9 @@ public:
 	 * их по виджету. Соединяет необходимые сигналы со слотами.
 	 * \param obj указатель на виджет-родитель.
 	 */
-    explicit SimpleArtificialShell(QWidget* obj = nullptr);
+	explicit TextToTabEditorShell(QWidget* obj = nullptr);
 	//! \~russian \brief Деструктор.
-	virtual ~SimpleArtificialShell() {}
+	virtual ~TextToTabEditorShell() {}
 
 	/*! \~russian
 	 * \brief Возвращает главный виджет с текстовым редактором и его кнопками.

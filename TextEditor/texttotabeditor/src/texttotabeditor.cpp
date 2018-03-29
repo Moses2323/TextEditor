@@ -15,7 +15,7 @@
 
 namespace fttw{
 
-SimpleArtificialShell::SimpleArtificialShell(QWidget *obj) : QWidget(obj){
+TextToTabEditorShell::TextToTabEditorShell(QWidget *obj) : QWidget(obj){
     mL_ = new QVBoxLayout;
 
     buttonLayout_ = new QHBoxLayout;
@@ -35,9 +35,9 @@ SimpleArtificialShell::SimpleArtificialShell(QWidget *obj) : QWidget(obj){
     setLayout(mL_);
 }
 
-QString SimpleArtificialShell::get_inFileName() const {return inFileLab_->text();}
+QString TextToTabEditorShell::get_inFileName() const {return inFileLab_->text();}
 
-bool SimpleArtificialShell::checkExistenceAndCreateIfNot(const QString &filename) const{
+bool TextToTabEditorShell::checkExistenceAndCreateIfNot(const QString &filename) const{
 	std::ifstream fin;
 	fin.open(filename.toStdString().c_str(), std::ios::in);
 	if (!fin.is_open()){
@@ -74,14 +74,14 @@ bool SimpleArtificialShell::checkExistenceAndCreateIfNot(const QString &filename
 	return true;
 }
 
-void SimpleArtificialShell::chooseFileForEditing(){
+void TextToTabEditorShell::chooseFileForEditing(){
 	QString str = QFileDialog::getSaveFileName(Q_NULLPTR, tr("Choose in-file"), defaultDir_, filters_);
 	if (str.size() == 0) return;
 	if (checkExistenceAndCreateIfNot(str))
 		inFileLab_->setText(str);
 }
 
-void SimpleArtificialShell::openFileForEditing(QString str){
+void TextToTabEditorShell::openFileForEditing(QString str){
 	if (fileToTab_ != nullptr){
 		//удалить внутренний FileToTabWidget с помощью reload_slot.
 		fileToTab_->set_loadName(str.toStdString());
@@ -94,14 +94,14 @@ void SimpleArtificialShell::openFileForEditing(QString str){
 	}
 }
 
-void SimpleArtificialShell::openFileForEditingWithLineEditor(const QString& str){
+void TextToTabEditorShell::openFileForEditingWithLineEditor(const QString& str){
 	if (str != inFileLab_->text()){
 		if (checkExistenceAndCreateIfNot(str))
 			inFileLab_->setText(str);
 	}
 }
 
-void SimpleArtificialShell::retranslate(){
+void TextToTabEditorShell::retranslate(){
 	openFileButton_->setText(tr("Open file..."));
 	if (fileToTab_ != nullptr)
 		fileToTab_->retranslate();
