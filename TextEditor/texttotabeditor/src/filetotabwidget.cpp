@@ -1,8 +1,124 @@
-#include "filetotabwidget.h"
+#include <filetotabwidget.h>
+#include "filetotab_priv.h"
+
+#include <QLineEdit>
+#include <QWidget>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QGridLayout>
+#include <QSplitter>
+#include <QLabel>
+#include <QTableWidget>
+#include <QTextEdit>
+#include <QTabWidget>
+
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <limits>
+
+#include "printelement.h"
+
+namespace fttw{
+
+void print_mistake(const std::string& funcName, int line, const std::string& fileName, const std::string& message){
+	std::cerr<<"ERROR in "<<funcName<<" : line "<<line<<", file "<<fileName<<std::endl;
+	std::cerr<<"\t"<<message<<std::endl;
+	throw;
+}
+
+void print_mistakeLite(const std::string& funcName, int line, const std::string& fileName, const std::string& message) {
+	std::cerr<<"WARNING in "<<funcName<<" : line "<<line<<", file "<<fileName<<std::endl;
+	std::cerr<<"\t"<<message<<std::endl;
+}
+
+namespace {
+
+/*! \~russian
+ * \brief Считывает из строчного потока до символа '\n' не включая и записывает результат в vs.
+ * \param ss поток ввода, из которого происходит считывание.
+ * \param vs сслыка на строку, которая будет изменена данной функцией.
+ * \return true, если поток не закончился
+ */
+bool getOneLine(std::istream& ss, std::string& vs) {
+	ss>>std::noskipws;
+	vs = "";
+	char c = 0;
+
+	ss>>c;
+	if ((c != '\n') && (!ss.eof()))
+		vs.push_back(c);
+	else{
+		ss>>std::skipws;
+//		return true;
+		if (ss.eof())		//
+			return false;	//
+		else				//
+			return true;	//
+	}
+	while(ss>>c){
+		if (c != '\n')
+			vs.push_back(c);
+		else{
+			ss>>std::skipws;
+			return true;
+		}
+	}
+
+	ss>>std::skipws;
+	return false;
+}
+
+/*! \~russian
+ * \brief Проверяет, является ли строка вещественным числом.
+ * \param s входная строка.
+ * \return true, если в строке содержится только вещественное число.
+ */
+bool isDouble(const std::string& s) {
+	QString vs = QString::fromStdString(s);
+	bool res = false;
+	vs.toDouble(&res);
+	return res;
+}
+
+/*! \~russian
+ * \brief Печатает имя родителя объекта obj, если он существует.
+ * \details Данная функция нужна только для отладки. Если родителя нет, то выводится строка "parent = nullptr".
+ * \param s поток вывода, куда выводится информация о родителе объекта obj.
+ * \param obj указатель на объект, у которого спрашивается информация о родителе.
+ * \return ссылку на поток вывода.
+ */
+std::ostream& print_parent(std::ostream& s, const QObject* obj) {
+	if (obj->parent() != nullptr)
+		s<<"parent = "<<obj->parent()->objectName().toStdString();
+	else
+		s<<"parent = nullptr";
+	return s;
+}
+
+/*! \~russian
+ * \brief Печатает имя объекта obj, если он существует.
+ * \details Если нет объекта - выводит "nullptr". также печатает имя родителя obj, если это возможно.
+ * Данная функция нужна только для отладки.
+ * \param s поток вывода, куда выводится информация об объекте obj.
+ * \param obj указатель на объект, у которого спрашивается информация.
+ * \return ссылку на поток вывода.
+ */
+std::ostream& tryToPrint(std::ostream& s, const QObject* obj) {
+	if (obj != nullptr){
+		s<<obj->objectName().toStdString()<<", ";
+		print_parent(s, obj);
+	}
+	else
+		s<<"nullptr";
+	return s;
+}
+
+}  // empty namespace
 
 //------------------ OnlyDoubleDelegate
 
-QWidget* fttw::OnlyDoubleDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const{
+QWidget* OnlyDoubleDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &, const QModelIndex &) const{
 	QLineEdit *lineEdit = new QLineEdit(parent);
 	QDoubleValidator *validator = new QDoubleValidator(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), 15, lineEdit);
 	validator->setLocale(QLocale(QLocale::English));
@@ -13,7 +129,7 @@ QWidget* fttw::OnlyDoubleDelegate::createEditor(QWidget *parent, const QStyleOpt
 
 //------------------ HighLightNumbers
 
-void fttw::HighLightNumbers::init(){
+void HighLightNumbers::init(){
 	intFormat_.setForeground(Qt::darkRed);
 	doubleFormat_.setForeground(Qt::red);
 	keywordFormat_.setForeground(Qt::blue);
@@ -41,7 +157,7 @@ void fttw::HighLightNumbers::init(){
 
 	QStringList doublePatterns;
 	doublePatterns<<"[\\+\\-]?\\b[0-9]*\\.[0-9]*\\b"
-				  <<"[\\+\\-]?\\b[0-9]*\\.?[0-9][eE][\\-\\+]?[0-9][0-9]*\\b";
+	              <<"[\\+\\-]?\\b[0-9]*\\.?[0-9][eE][\\-\\+]?[0-9][0-9]*\\b";
 	for(QStringList::iterator it = doublePatterns.begin(); it != doublePatterns.end(); ++it){
 		rule.format = doubleFormat_;
 		rule.pattern = QRegExp(*it);
@@ -49,7 +165,7 @@ void fttw::HighLightNumbers::init(){
 	}
 }
 
-void fttw::HighLightNumbers::highlightBlock(const QString &str){
+void HighLightNumbers::highlightBlock(const QString &str){
 	int index;
 	int L;
 	for(int i = 0; i < rules_.size(); ++i){
@@ -63,10 +179,21 @@ void fttw::HighLightNumbers::highlightBlock(const QString &str){
 	}
 }
 
+// ----------------------- FTTWFileBufferThread
+
+void FTTWFileBufferThread::run(){
+	FileToTabWidget::createFileBuffer(filename_, s_);
+	emit finishedReading();
+}
+
+FTTWFileBufferThread::FTTWFileBufferThread(const std::string& filename, std::stringstream& s)
+ : filename_(filename), s_(s){}
+
+FTTWFileBufferThread::~FTTWFileBufferThread() {}
 
 //------------------ FileToTabWidget
 
-std::ostream& fttw::FileToTabWidget::print(std::ostream& s) const{
+std::ostream& FileToTabWidget::print(std::ostream& s) const{
 	s<<"FileToTabWidget:"<<std::endl;
 	s<<"  name = "<<objectName().toStdString()<<std::endl;
 	s<<"  ";
@@ -110,13 +237,13 @@ std::ostream& fttw::FileToTabWidget::print(std::ostream& s) const{
 	return s;
 }
 
-void fttw::FileToTabWidget::layout_init(){
+void FileToTabWidget::layout_init(){
 	mL_ = new QVBoxLayout;
 	mW_->setLayout(mL_);
 	mL_->setObjectName("mainLayout");
 }
 
-void fttw::FileToTabWidget::main_init(){
+void FileToTabWidget::main_init(){
 	setObjectName("ScrollArea");
 	mW_ = new QFrame;
 
@@ -127,11 +254,11 @@ void fttw::FileToTabWidget::main_init(){
 	setWidgetResizable(true);
 }
 
-void fttw::FileToTabWidget::createFileBuffer(const std::string &filename, std::ostream& s){
+void FileToTabWidget::createFileBuffer(const std::string &filename, std::ostream& s){
 	std::ifstream fin;
 	fin.open(filename.c_str(), std::ios::in);
 	if (!fin.is_open()){
-		fttw::print_mistake(toStr(__FUNCTION__)+"(const string&, stringstream&)", __LINE__, __FILE__, "can\'t open file with name\n"+toStr(filename));
+		print_mistake(toStr(__FUNCTION__)+"(const string&, stringstream&)", __LINE__, __FILE__, "can\'t open file with name\n"+toStr(filename));
 	}
 
 	std::string vs = "";
@@ -145,7 +272,7 @@ void fttw::FileToTabWidget::createFileBuffer(const std::string &filename, std::o
 	fin.close();
 }
 
-void fttw::FileToTabWidget::createTextEditor(std::stringstream& vss){
+void FileToTabWidget::createTextEditor(std::stringstream& vss){
 	std::cout<<"CREATING TEXT EDITOR..."<<std::endl;
 
 	unmarkedValues_ = new QTextEdit(mW_);
@@ -162,7 +289,7 @@ void fttw::FileToTabWidget::createTextEditor(std::stringstream& vss){
 	std::cout<<"TEXT EDITOR WAS CREATED"<<std::endl;
 }
 
-void fttw::FileToTabWidget::createLabelVector(const std::string &labels, std::vector<std::string> &vec) const{
+void FileToTabWidget::createLabelVector(const std::string &labels, std::vector<std::string> &vec) const{
 	std::stringstream vss;		//поток для чтения названий глобальных параметров в этой строчке
 	vss.str(labels);
 	vec.reserve(5);
@@ -172,7 +299,7 @@ void fttw::FileToTabWidget::createLabelVector(const std::string &labels, std::ve
 	}
 }
 
-size_t fttw::FileToTabWidget::readGlobalValues(std::istream& ss, const std::string &labelLine, int& rowCounter, int& columnCounter){
+size_t FileToTabWidget::readGlobalValues(std::istream& ss, const std::string &labelLine, int& rowCounter, int& columnCounter){
 	std::vector<std::string> labels;		//названия глобальных параметров
 	createLabelVector(labelLine, labels);
 	std::vector<std::string> values;		//считанные значения глобальных параметров
@@ -226,7 +353,7 @@ size_t fttw::FileToTabWidget::readGlobalValues(std::istream& ss, const std::stri
 	return N;
 }
 
-void fttw::FileToTabWidget::addTableToTab(QTableWidget *table){
+void FileToTabWidget::addTableToTab(QTableWidget *table){
 	if (tabs_ == nullptr){
 		tabs_ = new QTabWidget(mW_);
 		tabs_->setObjectName("tabsArray");
@@ -235,7 +362,7 @@ void fttw::FileToTabWidget::addTableToTab(QTableWidget *table){
 	table->setObjectName("table_"+QString::number( tables_.size()+vectors_.size() ));
 }
 
-void fttw::FileToTabWidget::addTableToTab(QTableWidget *table, const QString &tabname){
+void FileToTabWidget::addTableToTab(QTableWidget *table, const QString &tabname){
 	if (tabs_ == nullptr){
 		tabs_ = new QTabWidget(mW_);
 		tabs_->setObjectName("tabsOrVecArray");
@@ -246,7 +373,7 @@ void fttw::FileToTabWidget::addTableToTab(QTableWidget *table, const QString &ta
 
 
 
-size_t fttw::FileToTabWidget::readVector(std::istream &ss, const std::string &labels){
+size_t FileToTabWidget::readVector(std::istream &ss, const std::string &labels){
 	std::vector<std::string> vecLabels;
 	createLabelVector(labels, vecLabels);
 	size_t Nvec = vecLabels.size();
@@ -308,7 +435,7 @@ size_t fttw::FileToTabWidget::readVector(std::istream &ss, const std::string &la
 	return numberOfEntersAfterTable;
 }
 
-size_t fttw::FileToTabWidget::readTable(std::istream &ss, const std::string &labels){
+size_t FileToTabWidget::readTable(std::istream &ss, const std::string &labels){
 	std::vector<std::string> vecLabels;				//названия столбцов
 	createLabelVector(labels, vecLabels);
 	size_t Ncol = vecLabels.size();			//количество столбцов
@@ -378,7 +505,7 @@ size_t fttw::FileToTabWidget::readTable(std::istream &ss, const std::string &lab
 	return numberOfEntersAfterTable;
 }
 
-QString fttw::FileToTabWidget::getTabName(std::istream &ss) const{
+QString FileToTabWidget::getTabName(std::istream &ss) const{
 	std::string vs;
 	getOneLine(ss, vs);
 	QString res;
@@ -391,7 +518,7 @@ QString fttw::FileToTabWidget::getTabName(std::istream &ss) const{
 	return res;
 }
 
-bool fttw::FileToTabWidget::checkGlobalValues(std::istream &ss, const std::string &labels) const{
+bool FileToTabWidget::checkGlobalValues(std::istream &ss, const std::string &labels) const{
 	std::stringstream vss;		//поток для чтения названий глобальных параметров в этой строчке
 	vss.str(labels);
 	std::string vs;
@@ -411,7 +538,7 @@ bool fttw::FileToTabWidget::checkGlobalValues(std::istream &ss, const std::strin
 	return true;
 }
 
-bool fttw::FileToTabWidget::checkVector(std::istream &ss, const std::string &labels) const{
+bool FileToTabWidget::checkVector(std::istream &ss, const std::string &labels) const{
 	std::stringstream vss;
 	vss.str(labels);
 	std::string vs;
@@ -441,7 +568,7 @@ bool fttw::FileToTabWidget::checkVector(std::istream &ss, const std::string &lab
 		return false;
 }
 
-bool fttw::FileToTabWidget::checkTable(std::istream &ss, const std::string &labels) const{
+bool FileToTabWidget::checkTable(std::istream &ss, const std::string &labels) const{
 	std::stringstream vss;		//поток для чтения названий глобальных параметров в этой строчке
 	vss.str(labels);
 	std::string vs;
@@ -472,7 +599,7 @@ bool fttw::FileToTabWidget::checkTable(std::istream &ss, const std::string &labe
 	return true;
 }
 
-bool fttw::FileToTabWidget::check_correct(std::istream& vss) const{
+bool FileToTabWidget::check_correct(std::istream& vss) const{
 	std::cout<<"CHECKING FILE FOR CORRECT INPUT..."<<std::endl;
 
 	bool res = false;
@@ -542,7 +669,7 @@ bool fttw::FileToTabWidget::check_correct(std::istream& vss) const{
 	return res;
 }
 
-void fttw::FileToTabWidget::createTabsAndGlobalValues(std::istream& fin){
+void FileToTabWidget::createTabsAndGlobalValues(std::istream& fin){
 	std::cout<<"START LOADING FILE..."<<std::endl;
 
 	tabsFromLabelsSplitter_ = new QSplitter( Qt::Orientation::Vertical );
@@ -694,7 +821,7 @@ void fttw::FileToTabWidget::createTabsAndGlobalValues(std::istream& fin){
 	std::cout<<"LOADING FILE HAS COMPLETED"<<std::endl;
 }
 
-void fttw::FileToTabWidget::chooseWhatCreate(){
+void FileToTabWidget::chooseWhatCreate(){
 	bool correct = check_correct(fttwSS_);
 	fttwSS_.clear();
 	fttwSS_.seekg(std::ios_base::beg);
@@ -710,7 +837,7 @@ void fttw::FileToTabWidget::chooseWhatCreate(){
 	loaderWidget.remove();
 }
 
-inline void fttw::FileToTabWidget::load_file(const std::string &filename){
+inline void FileToTabWidget::load_file(const std::string &filename){
 	fttwSS_.clear();
 	fttwSS_.str("");
 	fttwFBthread_.reset( new FTTWFileBufferThread(filename, fttwSS_) );
@@ -721,18 +848,23 @@ inline void fttw::FileToTabWidget::load_file(const std::string &filename){
 	fttwFBthread_->start();
 }
 
-fttw::FileToTabWidget::FileToTabWidget(const std::string &filename, QWidget *pwg, mode in_mode) : QScrollArea(pwg), mode_(in_mode){
+FileToTabWidget::FileToTabWidget(const std::string &filename, QWidget *pwg, mode in_mode) : QScrollArea(pwg), mode_(in_mode){
 	main_init();
 	load_file(filename);
 }
 
-void fttw::FileToTabWidget::saveFromData(std::ostream& fout) const{
+FileToTabWidget::~FileToTabWidget() {
+	for(size_t i=0; i<printElements_.size(); ++i)
+		delete printElements_[i];
+}
+
+void FileToTabWidget::saveFromData(std::ostream& fout) const{
 	for(size_t i=0; i<printElements_.size(); ++i){
 		printElements_[i]->printElem(fout);
 	}
 }
 
-void fttw::FileToTabWidget::saveFromEditor(std::ostream& fout) const{
+void FileToTabWidget::saveFromEditor(std::ostream& fout) const{
 	std::string s = unmarkedValues_->toPlainText().toStdString();
 	int Ne = 0;
 	for(int i = s.size()-1; i>=0; --i){
@@ -746,7 +878,7 @@ void fttw::FileToTabWidget::saveFromEditor(std::ostream& fout) const{
 	fout << s << std::endl;
 }
 
-void fttw::FileToTabWidget::save_file(const std::string &filename) const{
+void FileToTabWidget::save_file(const std::string &filename) const{
 	std::ofstream fout;
 	fout.open(filename.c_str(), std::ios::out);
 	if (!fout.is_open()){
@@ -769,11 +901,11 @@ void fttw::FileToTabWidget::save_file(const std::string &filename) const{
 
 //----------------------- OutSideWidget
 
-void fttw::OutSideWidget::savedata_slot(){
+void OutSideWidget::savedata_slot(){
 	emit savedata(savename_);
 }
 
-void fttw::OutSideWidget::hideSomeButtons(){
+void OutSideWidget::hideSomeButtons(){
 	if (fttw_->getMode() == FileToTabWidget::mode::Tabs){
 		toTextEditorButton_->show();
 		toTabsAndTablesButton_->hide();
@@ -784,23 +916,23 @@ void fttw::OutSideWidget::hideSomeButtons(){
 	}
 }
 
-void fttw::OutSideWidget::reload_slot(){
+void OutSideWidget::reload_slot(){
 	FileToTabWidget::mode fttwMode;
 	fttwMode = fttw_->getMode();
 
 	mL_->removeWidget(fttw_);
-	disconnect(this, SIGNAL(savedata(const string&)), fttw_, SLOT(save_file(const string&)));
+	disconnect(this, SIGNAL(savedata(const std::string&)), fttw_, SLOT(save_file(const std::string&)));
 	delete fttw_;
 
 	fttw_= new FileToTabWidget(loadname_, this, fttwMode);
 	mL_->insertWidget(0, fttw_);
 
-	connect(this, SIGNAL(savedata(const string&)), fttw_, SLOT(save_file(const string&)));
+	connect(this, SIGNAL(savedata(const std::string&)), fttw_, SLOT(save_file(const std::string&)));
 
 	hideSomeButtons();
 }
 
-void fttw::OutSideWidget::toTextEditor(){
+void OutSideWidget::toTextEditor(){
 	emit savedata(savename_);
 
 	mL_->removeWidget(fttw_);
@@ -814,7 +946,7 @@ void fttw::OutSideWidget::toTextEditor(){
 	hideSomeButtons();
 }
 
-void fttw::OutSideWidget::toTabsAndTables(){
+void OutSideWidget::toTabsAndTables(){
 	emit savedata(savename_);
 
 	mL_->removeWidget(fttw_);
@@ -828,16 +960,21 @@ void fttw::OutSideWidget::toTabsAndTables(){
 	hideSomeButtons();
 }
 
-void fttw::OutSideWidget::init(){
+void OutSideWidget::init(){
 	fttw_= new FileToTabWidget(loadname_, this, FileToTabWidget::mode::TextEditor);
 	mL_ = new QVBoxLayout;
 	setLayout(mL_);
 	setFrameStyle(NoFrame);
 
-	saveButton_ = new QPushButton(tr("&Save"));
-	reloadButton_ = new QPushButton(tr("&Reload"));
-	toTextEditorButton_ = new QPushButton(tr("&Text Editor"));
-	toTabsAndTablesButton_ = new QPushButton(tr("Ta&bles"));
+	saveButton_ = new QPushButton;
+	reloadButton_ = new QPushButton;
+	toTextEditorButton_ = new QPushButton;
+	toTabsAndTablesButton_ = new QPushButton;
+
+	saveButton_->setText(tr("&Save"));					// in retranslate
+	reloadButton_->setText(tr("&Reload"));				// in retranslate
+	toTextEditorButton_->setText(tr("&Text Editor"));	// in retranslate
+	toTabsAndTablesButton_->setText(tr("Ta&bles"));		// in retranslate
 
 	mL_->addWidget(fttw_);
 	QHBoxLayout *saveReloadLayout = new QHBoxLayout;
@@ -856,25 +993,21 @@ void fttw::OutSideWidget::init(){
 	connect(this, SIGNAL(savedata(const std::string&)), fttw_, SLOT(save_file(const std::string&)));
 }
 
-fttw::OutSideWidget::OutSideWidget(const std::string &name, QWidget *pwg)
+OutSideWidget::OutSideWidget(const std::string &name, QWidget *pwg)
 : QFrame(pwg), savename_(name), loadname_(name){
 	init();
 }
 
-fttw::OutSideWidget::OutSideWidget(const std::string& savename, const std::string& loadname, QWidget* pwg)
+OutSideWidget::OutSideWidget(const std::string& savename, const std::string& loadname, QWidget* pwg)
 : QFrame(pwg), savename_(savename), loadname_(loadname){
 	init();
 }
 
-// ----------------------- FTTWFileBufferThread
-
-void fttw::FTTWFileBufferThread::run(){
-	FileToTabWidget::createFileBuffer(filename_, s_);
-	emit finishedReading();
+void OutSideWidget::retranslate(){
+	saveButton_->setText(tr("&Save"));
+	reloadButton_->setText(tr("&Reload"));
+	toTextEditorButton_->setText(tr("&Text Editor"));
+	toTabsAndTablesButton_->setText(tr("Ta&bles"));
 }
 
-fttw::FTTWFileBufferThread::FTTWFileBufferThread(const std::string& filename, std::stringstream& s)
- : filename_(filename), s_(s){}
-
-fttw::FTTWFileBufferThread::~FTTWFileBufferThread() {}
-
+}  // namespace fttw

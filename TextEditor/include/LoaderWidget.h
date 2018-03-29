@@ -1,11 +1,12 @@
-/** @addtogroup TextEditor
+/** @addtogroup NNTools
  * @{*/
 
 /** @file */
 
-#ifndef LOADERWIDGET_DMITRIY_OSIPOV
-#define LOADERWIDGET_DMITRIY_OSIPOV
+#ifndef SBGLASS_H
+#define SBGLASS_H
 
+#include <toolssettings.h>
 #include <QObject>
 
 class QColor;
@@ -22,8 +23,7 @@ struct LoaderWidgetPrivate;
  * Данный виджет устанавливается поверх другого любого виджета, используя метод install() и удаляется, используя метод remove().
  * Данный виджет обычно применяется, чтобы заблокировать какой-то другой виджет во время загрузки данных или внутренних расчетов.
  */
-class LoaderWidget : public QObject
-{
+class TOOLS_EXPORT LoaderWidget : public QObject{
 	Q_OBJECT
 public:
 	/*! \~russian
@@ -93,7 +93,7 @@ protected:
 	 * \param[in] event Событие
 	 * \return Флаг обработки события
 	 */
-	bool eventFilter(QObject* object, QEvent* event);
+	bool eventFilter(QObject*, QEvent* event);
 
 private:
 	/*! \~russian
@@ -109,6 +109,6 @@ private slots:
 
 };
 
-#endif // LOADERWIDGET_DMITRIY_OSIPOV
+#endif // SBGLASS_H
 
 /*@}*/

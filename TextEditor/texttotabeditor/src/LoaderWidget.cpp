@@ -2,18 +2,20 @@
 #include <QMovie>
 #include <QGraphicsOpacityEffect>
 #include <QTimer>
+#include <QVector>
+#include <QString>
 #include <functional>
 
-#include "LoaderWidget.h"
+#include <LoaderWidget.h>
 
 namespace {
-	const QVector<QString> c_animFileNames = {
+	const QVector<QString> c_animFileNames {
 		"",
-	    ":line.gif",
-	    ":spinner1.gif",
-	    ":spinner2.gif",
-	    ":spinner3.gif",
-	    ":cat.gif"
+		":/res/line.gif",
+		":/res/spinner1.gif",
+		":/res/spinner2.gif",
+		":/res/spinner3.gif",
+		":/res/cat.gif"
 	};
 
 	const unsigned int c_textFrameTime = 300;
@@ -158,7 +160,7 @@ void LoaderWidget::remove()
 	}
 }
 
-bool LoaderWidget::eventFilter(QObject *object, QEvent *event)
+bool LoaderWidget::eventFilter(QObject *, QEvent *event)
 {
 	QEvent::Type eventType = event->type();
 	if ((eventType == QEvent::Show) || (eventType == QEvent::Resize)) {

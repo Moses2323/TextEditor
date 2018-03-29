@@ -1,4 +1,4 @@
-/** @addtogroup TextEditor
+/** @addtogroup NNTools
  * @{*/
 
 /** @file */
@@ -6,38 +6,34 @@
 #ifndef FILETOTABWIDGET16012017GASPARYANMOSES_H
 #define FILETOTABWIDGET16012017GASPARYANMOSES_H
 
-#include <QFrame>
-#include <QLabel>
-#include <QLineEdit>
-#include <QTabWidget>
-#include <QTextEdit>
-#include <QTableWidget>
-#include <QScrollArea>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QBoxLayout>
-#include <QItemDelegate>
-#include <QHeaderView>
-#include <QSyntaxHighlighter>
-#include <QPushButton>
-#include <QSplitter>
-#include <QGridLayout>
-#include <QThread>
-
-#include <iostream>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <cstdlib>
-#include <sstream>
-#include <limits>
-#include <iterator>
-#include <memory>
-
-#include "printelement.h"
+#include <toolssettings.h>
 #include "LoaderWidget.h"
 
+#include <QScrollArea>
+#include <QFrame>
+
+#include <vector>
+#include <string>
+#include <sstream>
+#include <memory>
+
+class QGridLayout;
+class QPushButton;
+class QLineEdit;
+class QVBoxLayout;
+class QHBoxLayout;
+class QBoxLayout;
+class QSplitter;
+class QLabel;
+class QTableWidget;
+class QTextEdit;
+class QTabWidget;
+
 namespace fttw{
+
+class FTTWFileBufferThread;
+class HighLightNumbers;
+class PrintElement;
 
 /*! \~russian
  * \brief Преобразует элемент на входе в строку.
@@ -63,11 +59,7 @@ inline std::string toStr(T elem) {
  * \param fileName имя файла, в котором находится функция, из которой произошел вызов функции-ошибки (зачастую достаточно использовать макрос __FILE__).
  * \param message сообщение об ошибке. Должно быть введено вручную.
  */
-inline void print_mistake(const std::string& funcName, int line, const std::string& fileName, const std::string& message){
-	std::cerr<<"ERROR in "<<funcName<<" : line "<<line<<", file "<<fileName<<std::endl;
-	std::cerr<<"\t"<<message<<std::endl;
-	throw;
-}
+extern void print_mistake(const std::string& funcName, int line, const std::string& fileName, const std::string& message);
 
 /*! \~russian
  * \brief Печатает в поток ошибок сообщение о предупреждении.
@@ -79,232 +71,7 @@ inline void print_mistake(const std::string& funcName, int line, const std::stri
  * \param fileName имя файла, в котором находится функция, из которой произошел вызов данной функции (зачастую достаточно использовать макрос __FILE__).
  * \param message сообщение-предупреждение. Должно быть введено вручную.
  */
-inline void print_mistakeLite(const std::string& funcName, int line, const std::string& fileName, const std::string& message) {
-	std::cerr<<"WARNING in "<<funcName<<" : line "<<line<<", file "<<fileName<<std::endl;
-	std::cerr<<"\t"<<message<<std::endl;
-}
-
-/*! \~russian
- * \brief Считывает из строчного потока до символа '\n' не включая и возвращает строку.
- * \param ss поток ввода, из которого происходит считывание.
- * \return строку до символа '\n'.
- */
-inline std::string getOneLine(std::istream& ss){
-	std::string res = "";
-	char c = 0;
-	ss>>std::noskipws;
-	ss>>c;
-	while((c != '\n') && (!ss.eof())){
-		res.push_back(c);
-		ss>>c;
-	}
-	ss>>std::skipws;
-	return res;
-}
-
-/*! \~russian
- * \brief Считывает из строчного потока до символа '\n' не включая и записывает результат в vs.
- * \param ss поток ввода, из которого происходит считывание.
- * \param vs сслыка на строку, которая будет изменена данной функцией.
- * \return true, если поток не закончился
- */
-inline bool getOneLine(std::istream& ss, std::string& vs) {
-	ss>>std::noskipws;
-	vs = "";
-	char c = 0;
-
-	ss>>c;
-	if ((c != '\n') && (!ss.eof()))
-		vs.push_back(c);
-	else{
-		ss>>std::skipws;
-		if (ss.eof())
-			return false;
-		else
-			return true;
-	}
-	while(ss>>c){
-		if (c != '\n')
-			vs.push_back(c);
-		else{
-			ss>>std::skipws;
-			return true;
-		}
-	}
-
-	ss>>std::skipws;
-	return false;
-}
-
-/*! \~russian
- * \brief Проверяет, является ли строка вещественным числом.
- * \param s входная строка.
- * \return true, если в строке содержится только вещественное число.
- */
-inline bool isDouble(const std::string& s) {
-	QString vs = QString::fromStdString(s);
-	bool res = false;
-	vs.toDouble(&res);
-	return res;
-}
-
-/*! \~russian
- * \brief Преобразует строку в указанный тип.
- * \details У объекта должен быть определен оператор ввода (>>).
- * Также не гарантируется успешность данного преобразования.
- * \return объект указанного типа.
- */
-template<typename T>
-inline T fromStringTo(const std::string& s) {
-	std::stringstream vss;
-	vss.str(s);
-	T res;
-	vss>>res;
-	return res;
-}
-
-/*! \~russian
- * \brief Печатает имя родителя объекта obj, если он существует.
- * \details Данная функция нужна только для отладки. Если родителя нет, то выводится строка "parent = nullptr".
- * \param s поток вывода, куда выводится информация о родителе объекта obj.
- * \param obj указатель на объект, у которого спрашивается информация о родителе.
- * \return ссылку на поток вывода.
- */
-inline std::ostream& print_parent(std::ostream& s, const QObject* obj) {
-	if (obj->parent() != nullptr)
-		s<<"parent = "<<obj->parent()->objectName().toStdString();
-	else
-		s<<"parent = nullptr";
-	return s;
-}
-
-/*! \~russian
- * \brief Печатает имя объекта obj, если он существует.
- * \details Если нет объекта - выводит "nullptr". также печатает имя родителя obj, если это возможно.
- * Данная функция нужна только для отладки.
- * \param s поток вывода, куда выводится информация об объекте obj.
- * \param obj указатель на объект, у которого спрашивается информация.
- * \return ссылку на поток вывода.
- */
-inline std::ostream& tryToPrint(std::ostream& s, const QObject* obj) {
-	if (obj != nullptr){
-		s<<obj->objectName().toStdString()<<", ";
-		print_parent(s, obj);
-	}
-	else
-		s<<"nullptr";
-	return s;
-}
-
-/*! \~russian \brief Вспомогательный класс, позволяющий вводить в таблицу только double.
- *
- * Позволяет вводить в ячейку таблицы только double от его минимального до
- * его максимального значения с точностью до 15-ти знаков после запятой.
- *
- * Схема использования:
- * \code
- *
- *  int Nrow = 5;
- *  int Ncol = 3;
- *
- * 	QTableWidget* table = new QTableWidget(Nrow, Ncol);
- *	table->setItemDelegate(new OnlyDoubleDelegate);
- *  //далее заполняем таблицу числами как обычно
- *  //...
- *
- * \endcode
- *
- */
-class OnlyDoubleDelegate : public QItemDelegate{
-	Q_OBJECT
-public:
-	/*! \~russian
-	 * \brief Отнаследованная от QItemDelegate виртуальная функция. Создана для того, чтобы нельзя было вводить в текстовое поле не вещественное число.
-	 * \details Создает новый редактор однострочного текста и применяет к нему валидатор:
-	 * устанавливает ввод числа с разделителем-точкой, с 15 знаками после запятой и границами от минимального значения double до максимального.
-	 * За основу берется QDoubleValidator.
-	 * \param parent указатель на виджета-родителя.
-	 * \param option не используемый параметр.
-	 * \param index не используемый параметр.
-	 * \return указатель на редактор однострочного текста, к которому был применен валидатор.
-	 */
-	QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-};
-
-
-
-
-/*! \~russian \brief Вспомогательный класс для выделения
- *
- * Позволяет выделять синим все ключевые слова, которые относятся к разметке документа,
- * темно-красным все целые числа(int), красным - все вещественные числа (double).
- *
- * Схема использования:
- * \code
- *
- * QTextEdit *te = new QTextEdit;
- * HighLightNumbers = new HighLightNumbers(te);
- * //теперь все символы будут подсвечены согласно выделителю.
- * //...
- *
- * \endcode
- *
- */
-class HighLightNumbers : public QSyntaxHighlighter{
-	Q_OBJECT
-private:
-	/*! \~russian
-	 * \brief Правило для выделения.
-	 * \details Является структурой, содержащей в себе регулярное выражение и формат для всех слов, которые этому регулярному выражению соответствуют
-	 * В нашей программе используется только цвет слов из всех возможностей формата.
-	 */
-	struct HighlightRule{
-		//! \~russian \brief Регулярное выражение для поиска слов.
-		QRegExp pattern;
-		//! \~russian \brief Формат для слов, соответствующих регулярному выражению.
-		QTextCharFormat format;
-	};
-
-	//! \~russian \brief Формат для всех вещественных чисел (красный цвет). \details Создается в конструкторе и больше нигде не меняется.
-	QTextCharFormat doubleFormat_;
-	//! \~russian \brief Формат для всех целых чисел (темно-красный цвет). \details Создается в конструкторе и больше нигде не меняется.
-	QTextCharFormat intFormat_;
-	//! \~russian \brief Формат для всех ключевых слов, которые участвуют в разметке текста (синий). \details Создается в конструкторе и больше нигде не меняется.
-	QTextCharFormat keywordFormat_;
-	//! \~russian \brief Вектор по всеми правилами форматирования. \details Создается в конструкторе и больше нигде не меняется.
-	QVector<HighlightRule> rules_;
-
-	/*! \~russian
-	 * \brief Функция инициализации.
-	 * \details Вызывается только в конструкторе и только один раз.
-	 *
-	 */
-	void init();
-
-public:
-	/*! \~russian
-	 * \brief Пустой конструктор. Запускает функцию инициализации.
-	 * \param pwg указатель на объект-предок. Аргумент может отсутствовать.
-	 */
-	explicit HighLightNumbers(QObject* pwg = nullptr) : QSyntaxHighlighter(pwg){init();}
-	/*! \~russian
-	 * \brief Конструктор с текстовым документом.
-	 * \details Делает текстовый документ pwg родителем объекта данного класса, а также выполняет для pwg функцию highlightBlock(const QString&).
-	 * \param pwg текстовый документ.
-	 */
-	explicit HighLightNumbers(QTextDocument* pwg) : QSyntaxHighlighter(pwg){init();}
-	/*! \~russian
-	 * \brief Функция форматирования текста в блоках.
-	 * \details Виртуальная функция, в которой применяются правила выделения текста rules_ к одной строке str.
-	 * \param str строка, в которой форматируются определенным образом символы.
-	 */
-	virtual void highlightBlock(const QString &str) override;
-};
-
-
-
-
-class FTTWFileBufferThread;
+extern void print_mistakeLite(const std::string& funcName, int line, const std::string& fileName, const std::string& message);
 
 /*! \~russian \brief Класс, преобразующий файл в виджет и обратно.
  *
@@ -317,6 +84,8 @@ class FTTWFileBufferThread;
  *
  * Имеет несколько слотов для загрузки, сохранения, очистки.
  *
+ * Также можно сразу задать вариант открытия файла при конструировании объекта.
+ *
  * Схема использования:
  * \code
  *
@@ -328,7 +97,7 @@ class FTTWFileBufferThread;
  * \endcode
  *
  */
-class FileToTabWidget : public QScrollArea{
+class TOOLS_EXPORT FileToTabWidget : public QScrollArea{
 	Q_OBJECT
 private:
 	/*! \~russian
@@ -654,10 +423,7 @@ public:
 	explicit FileToTabWidget(const std::string& filename, QWidget* pwg = nullptr, mode in_mode = mode::Tabs);
 
 	//! \~russian \brief Деструктор. \details Удаляет элементы из массива printElements_.
-	~FileToTabWidget() {
-		for(size_t i=0; i<printElements_.size(); ++i)
-			delete printElements_[i];
-	}
+	~FileToTabWidget();
 
 	/*! \~russian
 	 * \brief Функция для печати всех элементов данного виджета в поток. Используется для отладки.
@@ -728,80 +494,6 @@ inline std::ostream& operator<<(std::ostream& s, const FileToTabWidget& tw){
 	return tw.print(s);
 }
 
-
-
-/*! \~russian
- * \brief Тред для блокнота.
- *
- * Тред используется, чтобы загружать файл в строковый буфер,
- * не останавливая работу приложения. На время использования
- * данного треда можно, например, поставить анимацию загрузки
- * на виджет.
- *
- * Также с помощью сигнально-слотового соединения можно задать реакцию
- * на завершение процесса.
- *
- * Схема использования:
- * \code
- *
- * // inside of some QObject class.
- *
- * std::string filename = "myFile.txt";
- * std::stringstream vss;
- *
- * FTTWFileBufferThread myThr(filename, vss);
- *
- * // prepearing
- * // ...
- *
- * // connect with finished signal
- * connect(&myThr, SIGNAL(finishedReading()), this, SLOT(reactionForFinished()));
- *
- * // run this thread
- * myThr.start();
- *
- * // another job
- * // ...
- *
- * \endcode
- *
- */
-class FTTWFileBufferThread : public QThread{
-	Q_OBJECT
-private:
-	//! \~russian \brief Имя файла, из которого происходит считывание.
-	std::string filename_;
-	//! \~russian \brief Ссылка на строковый буфер, в который происходит вывод того, что считано из файла.
-	std::stringstream& s_;
-
-protected:
-	/*! \~russian
-	 * \brief Функция запуска треда.
-	 * \details Активируется, когда вызывается метод start().
-	 * Производит вызов статической функции FileToTabWidget::createFileBuffer().
-	 *
-	 * После завершения считывания испускает сигнал finishedReading().
-	 */
-	void run();
-
-public:
-	/*! \~russian
-	 * \brief Конструктор.
-	 * \param filename имя файла, из которого будет производиться считывание.
-	 * \param s ссылка на строковый буфер, в который будет считана информация из файла.
-	 */
-	FTTWFileBufferThread(const std::string& filename, std::stringstream& s);
-	//! \~russian \brief Деструктор.
-	~FTTWFileBufferThread();
-
-signals:
-	//! \~russian \brief Сигнал, который испускается после завершения процесса считывания.
-	void finishedReading();
-};
-
-
-
-
 /*! \~russian \brief Виджет с кнопками для редактора FileToTabWidget.
  *
  * Создает виджет, на котором присутствуют:
@@ -813,6 +505,8 @@ signals:
  * 3. кнопка для попытки считывания файла ещё раз (кнопка перезагрузки).
  *
  * 4. Кнопка переключения режима.
+ *
+ * По умолчанию открывает файл в режиме текстового редактора с подсветкой.
  *
  * Схема использования:
  * \code
@@ -838,7 +532,7 @@ signals:
  * \endcode
  *
  */
-class OutSideWidget : public QFrame{
+class TOOLS_EXPORT OutSideWidget : public QFrame{
 	Q_OBJECT
 private:
 	/*! \~russian
@@ -1005,6 +699,11 @@ public:
 	 */
 	void set_loadName(const std::string& loadName) {loadname_ = loadName;}
 
+	/*! \~russian
+	 * \brief Функция для перевода элементов виджета "на лету".
+	 */
+	void retranslate();
+
 public slots:
 	/*! \~russian
 	 * \brief Слот, который вызывает сигнал savedata(const string&), чтобы можно было вызвать другой слот из класса FileToTabWidget.
@@ -1044,6 +743,5 @@ signals:
 }
 
 #endif // FILETOTABWIDGET16012017GASPARYANMOSES_H
-
 
 /*@}*/

@@ -1,11 +1,23 @@
+#include <shell.h>
+
+#include <filetotabwidget.h>
+#include "filetotab_priv.h"
+
 #include <QDebug>
-#include "shell.h"
+#include <QPushButton>
+#include <QBoxLayout>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QLineEdit>
+
+#include <fstream>
 
 SimpleArtificialShell::SimpleArtificialShell(QWidget *obj) : QWidget(obj){
     mL_ = new QVBoxLayout;
 
     buttonLayout_ = new QHBoxLayout;
-	openFileButton_ = new QPushButton(tr("Open file..."));
+	openFileButton_ = new QPushButton;
+	openFileButton_->setText(tr("Open file..."));		// in retranslate
     inFileLab_ = new QLineEdit("");
     inFileLab_->setReadOnly(true);
 
@@ -20,6 +32,8 @@ SimpleArtificialShell::SimpleArtificialShell(QWidget *obj) : QWidget(obj){
     setLayout(mL_);
 }
 
+QString SimpleArtificialShell::get_inFileName() const {return inFileLab_->text();}
+
 bool SimpleArtificialShell::checkExistenceAndCreateIfNot(const QString &filename) const{
 	std::ifstream fin;
 	fin.open(filename.toStdString().c_str(), std::ios::in);
@@ -30,8 +44,22 @@ bool SimpleArtificialShell::checkExistenceAndCreateIfNot(const QString &filename
 		std::ofstream fout;
 		fout.open(filename.toStdString().c_str(), std::ios::out);
 		if (!fout.is_open()){			//не можем создать файл, т.к., скорее всего, нет либо прав доступа, либо нет папки, в которой файл должен лежать.
-			fttw::print_mistakeLite(fttw::toStr(__FUNCTION__)+"(const QString&)", __LINE__, __FILE__, "Can\'t create file with name:\n" + filename.toStdString() + "\nmay be you forgot to create folders?\n");
-			QMessageBox::warning(0, tr("Attention"), tr("Can\'t create file with name:")+"\n" + filename + "\n" + tr("may be you forgot to create folders or you have no permission to create file in this folder?"));
+			fttw::print_mistakeLite(std::string(__FUNCTION__)+"(const QString&)", __LINE__, __FILE__, "Can\'t create file with name:\n" + filename.toStdString() + "\nmay be you forgot to create folders?\n");
+
+//			static const QString attTitle[IAtlas::Language_Count]{
+//				tr("Attention"),
+//				tr("Внимание")
+//			};
+//			static const QString attMess1[IAtlas::Language_Count]{
+//				tr("Can\'t create file with name:"),
+//				tr("Не могу создать файл с именем:")
+//			};
+//			static const QString attMess2[IAtlas::Language_Count]{
+//				tr("may be you forgot to create folders or you have no permission to create file in this folder?"),
+//				tr("возможно, Вы забыли создать папку или у Вас нет прав для создания файлов в этой папке?")
+//			};
+
+//			QMessageBox::warning(0, attTitle[IAtlas::instance()->language()], attMess1[IAtlas::instance()->language()]+"\n" + filename + "\n" + attMess2[IAtlas::instance()->language()]);
 			return false;
 		}
 
@@ -43,9 +71,8 @@ bool SimpleArtificialShell::checkExistenceAndCreateIfNot(const QString &filename
 	return true;
 }
 
-
 void SimpleArtificialShell::chooseFileForEditing(){
-	QString str = QFileDialog::getSaveFileName(Q_NULLPTR, tr("Choose in-file"), defaultDir_);
+	QString str = QFileDialog::getSaveFileName(Q_NULLPTR, tr("Choose in-file"), defaultDir_, filters_);
 	if (str.size() == 0) return;
 	if (checkExistenceAndCreateIfNot(str))
 		inFileLab_->setText(str);
@@ -64,7 +91,6 @@ void SimpleArtificialShell::openFileForEditing(QString str){
 	}
 }
 
-
 void SimpleArtificialShell::openFileForEditingWithLineEditor(const QString& str){
 	if (str != inFileLab_->text()){
 		if (checkExistenceAndCreateIfNot(str))
@@ -72,4 +98,8 @@ void SimpleArtificialShell::openFileForEditingWithLineEditor(const QString& str)
 	}
 }
 
-
+void SimpleArtificialShell::retranslate(){
+	openFileButton_->setText(tr("Open file..."));
+	if (fileToTab_ != nullptr)
+		fileToTab_->retranslate();
+}

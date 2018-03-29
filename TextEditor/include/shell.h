@@ -1,4 +1,4 @@
-/** @addtogroup TextEditor
+/** @addtogroup NNTools
  * @{*/
 
 /** @file */
@@ -6,12 +6,19 @@
 #ifndef SIMPLEARTIFICIALSHELL200217_GASPARYANMOSES
 #define SIMPLEARTIFICIALSHELL200217_GASPARYANMOSES
 
-#include "filetotabwidget.h"
-#include <QProcess>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QDialog>
-#include <QLineEdit>
+#include <toolssettings.h>
+
+#include <QWidget>
+
+class QLineEdit;
+class QVBoxLayout;
+class QHBoxLayout;
+class QPushButton;
+class QLabel;
+class QSplitter;
+namespace fttw{
+    class OutSideWidget;
+}
 
 /*! \~russian \brief Виджет для открытия файла в специальном редакторе.
  *
@@ -36,7 +43,7 @@
  * \endcode
  *
  */
-class SimpleArtificialShell : public QWidget{
+class TOOLS_EXPORT SimpleArtificialShell : public QWidget{
 	Q_OBJECT
 private:
 	//! \~russian \brief Главный виджет с текстовым редактором и его кнопками.
@@ -58,6 +65,8 @@ private:
 
 	//! \~russian \brief Папка по умолчанию, которая открывается перед пользователем при нажатии кнопки "Open in-file". Устанавливается внешним виджетом, если нужно.
 	QString defaultDir_ {""};
+	//! \~russian \brief Фильтры на файлы в QFileDialog, которые применяются при открытии файла пользователем при нажатии кнопки "Open in-file". Устанавливается внешним виджетом, если нужно.
+	QString filters_ {""};
 
 	/*! \~russian
 	 * \brief Функция проверяет, существует ли файл.
@@ -113,7 +122,7 @@ public:
 	 * \details Читает часть приватного поля inFileLab_.
 	 * \return строку, содержащую имя файла, открытого в текстовом редакторе.
 	 */
-	QString get_inFileName() const {return inFileLab_->text();}
+	QString get_inFileName() const;
 
 	/*! \~russian
 	 * \brief Возвращает текстовый редактор с именем файла,
@@ -132,18 +141,35 @@ public:
 	const QLineEdit* get_inFileLineEditor() const {return inFileLab_;}
 
 	/*! \~russian
-	 * \brief Устанавливает имя папки по умолчанию, открывающейся перед пользователем при нажатии кнопки "Open in-file".
+	 * \brief Устанавливает имя папки по умолчанию, открывающейся перед пользователем при нажатии кнопки "Open file".
 	 * \details Изменяет приватное поле defaultDir_.
 	 * \param dirIn новое имя папки по умолчанию.
 	 */
 	void set_defaultDir(const QString& dirIn) { defaultDir_ = dirIn; }
 
 	/*! \~russian
-	 * \brief Возвращает имя папки по умолчанию, открывающейся перед пользователем при нажатии кнопки "Open in-file".
+	 * \brief Возвращает имя папки по умолчанию, открывающейся перед пользователем при нажатии кнопки "Open file".
 	 * \details Читает приватное поле defaultDir_.
 	 * \return константную ссылку на имя директории по умолчанию.
 	 */
 	const QString& get_defaultDir() const { return defaultDir_; }
+
+	/*! \~russian
+	 * \brief Функция устанавливает фильтры, которые применяются при открытии пользователем диалогового окна при нажатии кнопки "Open file".
+	 * \param newFilters
+	 */
+	void set_fileFilters( const QString& newFilters ) { filters_ = newFilters; }
+
+	/*! \~russian
+	 * \brief Функция возвращает строку, содержащую фильтры, применяющиеся при открытии пользователем диалогового окна при нажатии кнопки "Open file".
+	 * \return константную ссылку на строку, содержащую фильтры.
+	 */
+	const QString& get_fileFilters() const { return filters_; }
+
+	/*! \~russian
+	 * \brief Функция для перевода элементов виджета "на лету".
+	 */
+	void retranslate();
 
 private slots:
 	/*! \~russian
